@@ -2,7 +2,7 @@ import { Type, Field } from '@launchql/protobufjs';
 import * as t from '@babel/types';
 import { createNamedImport, createNamedImportAsSuffix, getFieldName, toSpecialCamelCase } from '../../utils';
 import { PgProtoParserOptions } from '../../options';
-import { NODE_TYPE, SPECIAL_TYPES } from '../../constants';
+import { NODE_TYPE } from '../../constants';
 import { resolveTypeName } from './utils';
 
 export const generateTypeImports = (types: Type[], source: string, suffix?: string) => {
@@ -17,22 +17,9 @@ export const generateAstHelperMethods = (types: Type[]): t.ExportDefaultDeclarat
     const param = t.identifier('_p');
     param.optional = true;
 
+    param.typeAnnotation = t.tsTypeAnnotation(t.tsTypeReference(t.identifier(typeName)));
 
-    if (!SPECIAL_TYPES.includes(type.name)) {
-      param.typeAnnotation = t.tsTypeAnnotation(
-        t.tsIndexedAccessType(
-          t.tsTypeReference(t.identifier(typeName)),
-          t.tsLiteralType(t.stringLiteral(typeName))
-        )
-      );
-    } else {
-      param.typeAnnotation = t.tsTypeAnnotation(t.tsTypeReference(t.identifier(typeName)));
-    }
-
-    let init: any = [t.objectProperty(t.identifier(typeName), t.objectExpression([]))];
-    if (SPECIAL_TYPES.includes(typeName)) {
-      init = [];
-    }
+    let init: any = [];
 
     // @ts-ignore
     const fields: Field[] = type.fields;
@@ -54,7 +41,7 @@ export const generateAstHelperMethods = (types: Type[]): t.ExportDefaultDeclarat
             t.memberExpression(t.identifier('_o'), t.identifier('set')),
             [
               t.identifier('_j'),
-              t.stringLiteral(SPECIAL_TYPES.includes(typeName) ? fieldName : `${typeName}.${fieldName}`),
+              t.stringLiteral(fieldName),
               t.optionalMemberExpression(
                 t.identifier('_p'),
                 t.identifier(fieldName),
@@ -182,10 +169,11 @@ export const convertTypeToTsInterface = (
 }
 export const convertTypeToWrappedTsInterface = (
   type: Type,
-  options: PgProtoParserOptions
+  options: PgProtoParserOptions,
+  isWrappedTypeFn: (typeName: string) => boolean
 ) => {
   const typeName = type.name;
-  if (SPECIAL_TYPES.includes(typeName)) return convertTypeToTsInterface(type, options);
+  if (isWrappedTypeFn(typeName)) return convertTypeToTsInterface(type, options);
 
   const properties = extractTypeFieldsAsTsProperties(type, options);
 
