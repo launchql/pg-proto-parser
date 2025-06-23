@@ -86,5 +86,6 @@
     "nested-obj": "^0.0.1",
     "node-html-parser": "6.1.12",
     "recast": "0.23.6"
-  }
+  },
+  "gitHead": "0ef8c496618cc949ba1ce55895d1c77049bb3f78"
 }
